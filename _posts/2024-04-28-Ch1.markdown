@@ -42,13 +42,89 @@ df = pd.read_csv("../data/shk2mod.csv", index_col=0)
 df.drop("id", axis=1, inplace=True)                  
 # Renaming columns                        
 df.rename(columns={"og": "shakespeare eng", "t": "modern eng"}, inplace=True)   
+
+# Visualizing Sentences
 ```
 
-| shakespeare eng | modern eng |
-|-----------------|------------|
-|You do not meet a man but frowns: | Every man you meet these days is frowning.|
-|our bloods No more obey the heavens than our... | Our bodies are in agreement with the planetar...|
-| $$\vdots$$ | $$\vdots$$ |
-| When that I was and a little tiny boy, With... | When I was just a tiny little boy,With hey, ho... |
-*51787 rows × 2 columns*
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
 
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>shakespeare eng</th>
+      <th>modern eng</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>You do not meet a man but frowns:</td>
+      <td>Every man you meet these days is frowning.</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>our bloods  No more obey the heavens than our...</td>
+      <td>Our bodies are in agreement with the planetar...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>But what's the matter?</td>
+      <td>What's wrong?</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>His daughter, and the heir of's kingdom, whom...</td>
+      <td>The king wanted his daughter, the only heir to...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>she's wedded;  Her husband banish'd; she impr...</td>
+      <td>She's married, her husband is banished, she's...</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>205</th>
+      <td>He hath not told us of the captain yet.</td>
+      <td>He hasn't told us about that captain yet.</td>
+    </tr>
+    <tr>
+      <th>206</th>
+      <td>When that is known and golden time convents, ...</td>
+      <td>When that's taken care of and the time is conv...</td>
+    </tr>
+    <tr>
+      <th>207</th>
+      <td>Meantime, sweet sister,  We will not part fro...</td>
+      <td>Until then, sweet sister-in-law, we won't leav...</td>
+    </tr>
+    <tr>
+      <th>208</th>
+      <td>Cesario, come,  For so you shall be, while yo...</td>
+      <td>Cesario, come here. You'll be Cesario to me wh...</td>
+    </tr>
+    <tr>
+      <th>209</th>
+      <td>When that I was and a little tiny boy,    With...</td>
+      <td>When I was just a tiny little boy,With hey, ho...</td>
+    </tr>
+  </tbody>
+</table>
+<p>51787 rows × 2 columns</p>
+</div>
