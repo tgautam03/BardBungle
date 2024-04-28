@@ -44,6 +44,7 @@ df.drop("id", axis=1, inplace=True)
 df.rename(columns={"og": "shakespeare eng", "t": "modern eng"}, inplace=True)   
 
 # Visualizing Sentences
+print(df)
 ```
 
 <div>
@@ -100,27 +101,27 @@ df.rename(columns={"og": "shakespeare eng", "t": "modern eng"}, inplace=True)
       <td>...</td>
     </tr>
     <tr>
-      <th>205</th>
+      <th>51782</th>
       <td>He hath not told us of the captain yet.</td>
       <td>He hasn't told us about that captain yet.</td>
     </tr>
     <tr>
-      <th>206</th>
+      <th>51783</th>
       <td>When that is known and golden time convents, ...</td>
       <td>When that's taken care of and the time is conv...</td>
     </tr>
     <tr>
-      <th>207</th>
+      <th>51784</th>
       <td>Meantime, sweet sister,  We will not part fro...</td>
       <td>Until then, sweet sister-in-law, we won't leav...</td>
     </tr>
     <tr>
-      <th>208</th>
+      <th>51785</th>
       <td>Cesario, come,  For so you shall be, while yo...</td>
       <td>Cesario, come here. You'll be Cesario to me wh...</td>
     </tr>
     <tr>
-      <th>209</th>
+      <th>51786</th>
       <td>When that I was and a little tiny boy,    With...</td>
       <td>When I was just a tiny little boy,With hey, ho...</td>
     </tr>
