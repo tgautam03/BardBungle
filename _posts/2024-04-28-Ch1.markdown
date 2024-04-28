@@ -1,0 +1,25 @@
+---
+layout: post
+comments: false
+title:  "Chapter 1: All Things dataset..."
+excerpt: "Dataset is at the heart of every Machine Learning task. In this post, I've explored the Shakespeare Dataset and explained concepts related to tokenization, Token Embedding and Positional Encoding"
+date:   2023-09-11 10:00:00
+
+---
+
+## Introduction
+Whenever someone talks about Transformers now a days, more often than not, they mean Generative models like GPT. However, not a lot of people know that originally Transformers were designed for Machine Translation. A user would input a sentence in one language and the model would translate that to another. This was done using an encoder-decoder styled architecture, where the encoder accepts the input and understands the context in this particular sentence. This information is then passed over to the decoder which starts generating the translation. 
+
+In this work, I'll be focusing on the task of Machine Translation using the "Shakespeare" dataset. I will start with:
+
+The dataset (which contains the excerpts from Shakespeare and their meaning), how it is tokenized and preprocessed for training the Neural Net.
+
+I will then spend some time discussing the token embeddings and positional encodings. The special thing about these embeddings is that they will be learned alongside the network parameters.
+
+After that, I'll move on to the Transformer Neural Net, where
+
+I'll delve into the details that make up the encoder, specifically I'll focus more on the Multi-head Self Attention and how it learns the relationship between different words. The hope here is that the encoder can understand the context in the input sentence, because
+
+This will guide the decoder (when prompted), to start translating the sentence. 
+
+I will also discuss the training procedure in detail and more specifically how the loss function enables the generator to make accurate predictions.
