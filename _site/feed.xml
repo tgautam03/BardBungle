@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Computational Science and Engineering</title>
+    <description>Everything High Performance</description>
+    <link>http://localhost:4000/Computational-Sciences/</link>
+    <atom:link href="http://localhost:4000/Computational-Sciences/feed.xml" rel="self" type="application/rss+xml" />
+    <pubDate>Fri, 29 Sep 2023 16:11:46 -0600</pubDate>
+    <lastBuildDate>Fri, 29 Sep 2023 16:11:46 -0600</lastBuildDate>
+    <generator>Jekyll v4.2.2</generator>
+    
+      <item>
+        <title>Differential and Difference Equations</title>
+        <description>&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Consider a scenario where a &lt;em&gt;thin, insulated&lt;/em&gt; metal rod is put on an &lt;em&gt;infinite block of ice at both ends&lt;/em&gt; and a &lt;em&gt;blowtorch&lt;/em&gt; is heating it along it’s length (see Figure 1). The task is to find the temperature at several locations along the bar when it reaches steady state (i.e. when there’s no change in temperature of the rod with time).&lt;/p&gt;
+
+&lt;div class=&quot;imgcap&quot;&gt;
+  &lt;img src=&quot;https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-20-Differential-Difference-Equations/Figure1.png&quot; alt=&quot;this slowpoke moves&quot; width=&quot;800&quot; /&gt;
+  &lt;div class=&quot;thecap&quot;&gt;Figure 1: A thin metal rod with both ends attached to ice blocks and blowtorch heating it. &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;In the above description, we actually received almost all the assumptions for the problem:&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;&lt;em&gt;Thin&lt;/em&gt;: It’s just a 1D problem with probably \(x\) used to denote the location along the length of the rod.&lt;/li&gt;
+    &lt;li&gt;&lt;em&gt;Insulated&lt;/em&gt;: No energy loss due to radiation from the surface of the rod to the surroundings.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The &lt;em&gt;Partial Differential Equation&lt;/em&gt; (PDE) with boundary conditions explaining this scenario is known as the &lt;strong&gt;Heat Equation&lt;/strong&gt; (Steady-State in this case).&lt;/p&gt;
+
+\[-\frac{d^2u}{dx^2}=f(x) \ \ \forall \ 0 \le x \le 1; \ \ \ \ \ \ \ \ \ \ u(0)=u(1)=0 \tag{1}\]
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note that&lt;/p&gt;
+  &lt;ul&gt;
+    &lt;li&gt;The temperature distribution along the length of the rod which ranges between 0 and 1 is given as \(u(x)\),&lt;/li&gt;
+    &lt;li&gt;The source term (&lt;em&gt;blowtorch&lt;/em&gt;) is defined as \(f(x)\) and,&lt;/li&gt;
+    &lt;li&gt;The boundary conditions \(u(x)=u(1)=0\) represent the &lt;em&gt;ice block&lt;/em&gt; at the ends.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The complete Heat Equation is derived using conservation of heat energy and Fourier’s Law of Heat Conduction, details to which can be found in my &lt;a href=&quot;&quot;&gt;YouTube Video&lt;/a&gt; or the &lt;a href=&quot;&quot;&gt;Blog Post&lt;/a&gt; on this topic.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;why-are-boundary-conditions-so-important&quot;&gt;Why are &lt;em&gt;Boundary Conditions&lt;/em&gt; so important?&lt;/h3&gt;
+&lt;p&gt;For the time being, set \(f(x)=1\). Now looking at the differential equation, what we need is some function \(u(x)\) that satisfies \(-\frac{d^2u}{dx^2}=1\). For this simple problem, we can integrate both sides twice and get a solution \(u(x)=-\frac{1}{2}x^2 + Cx + D\) where \(C\) and \(D\) can be any constants! This is where boundary conditions \(u(0)=u(1)=0\) fix the values of \(C\), \(D\) and gives us a unique solution \(u(x)=-\frac{1}{2}x^2 + \frac{1}{2}x\).&lt;/p&gt;
+
+&lt;h3 id=&quot;finite-differences&quot;&gt;Finite Differences&lt;/h3&gt;
+&lt;p&gt;In order to solve the PDE on a computer, we need to find a way to represent or approximate the derivatives numerically, which is done using Finite Differences. From &lt;em&gt;Taylor Series&lt;/em&gt;, we know that&lt;/p&gt;
+
+\[u(x+h) = u(x) + h u'(x) + \frac{h^2}{2!}u''(x) + \frac{h^3}{3!}u'''(x) + \cdots \tag{2}\]
+
+&lt;p&gt;and&lt;/p&gt;
+
+\[u(x-h) = u(x) - h u'(x) + \frac{h^2}{2!}u''(x) - \frac{h^3}{3!}u'''(x) + \cdots \tag{3}\]
+
+&lt;p&gt;Rearranging Equation \((2)\), we can get the &lt;em&gt;Forward Difference Approximation&lt;/em&gt; to the 1st order derivative&lt;/p&gt;
+
+\[\begin{aligned}
+\frac{u(x+h) -  u(x)}{h} &amp;amp; = u'(x) + \frac{h}{2!}u''(x) + \frac{h^2}{3!}u'''(x) + \cdots \\
+                        &amp;amp; = u'(x) + \mathcal{O}(h) 
+\end{aligned} \tag{4}\]
+
+&lt;p&gt;Similarly from Equation \((3)\), we can get the &lt;em&gt;Backward Difference Approximation&lt;/em&gt; to the 1st order derivative&lt;/p&gt;
+
+\[\begin{aligned}
+\frac{u(x) -  u(x-h)}{h} &amp;amp; = u'(x) - \frac{h}{2!}u''(x) + \frac{h^2}{3!}u'''(x) + \cdots \\
+                        &amp;amp; = u'(x) + \mathcal{O}(h) 
+\end{aligned} \tag{5}\]
+
+&lt;p&gt;Finally, subtracting Equation \((3)\) from Equation \((2)\), we can get the &lt;em&gt;Centered Difference Approximation&lt;/em&gt; to the 1st order derivative&lt;/p&gt;
+
+\[\begin{aligned}
+\frac{u(x+h) -  u(x-h)}{2h} &amp;amp; = u'(x) + \frac{2h^2}{3!}u'''(x) + \cdots \\
+                        &amp;amp; = u'(x) + \mathcal{O}(h^2) 
+\end{aligned} \tag{6}\]
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;Centered Difference&lt;/em&gt; is 2nd order Accurate in \(h\) while others are 1st order Accurate in \(h\)!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;We can also add Equations \((2)\) and \((3)\), to get an approximation to 2nd order derivative&lt;/p&gt;
+
+\[\begin{aligned}
+\frac{u(x+h) - 2u(x) +  u(x-h)}{h^2} &amp;amp; = u''(x) + \frac{2h^2}{4!}u''''(x) + \cdots \\
+                        &amp;amp; = u''(x) + \mathcal{O}(h^2) 
+\end{aligned} \tag{7}\]
+
+&lt;blockquote&gt;
+  &lt;p&gt;2nd order derivative is by default 2nd order accurate in \(h\)!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;difference-equation&quot;&gt;Difference Equation&lt;/h2&gt;
+&lt;p&gt;The next step is to use the above defined equations \((2)\) through \((7)\) and convert the &lt;em&gt;Differential Equation&lt;/em&gt; to a &lt;em&gt;Difference Equation&lt;/em&gt;. For this, we need &lt;strong&gt;numerical descretisation&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;numerical-discretisation&quot;&gt;Numerical Discretisation&lt;/h3&gt;
+&lt;p&gt;Considering the PDE in Equation \((1)\), where the domain lies between 0 and 1. What discretisation does is represent this continuous domain using a finite set of points. As shown in Figure 2, I’m discretising the domain into 5 equispaced points with distance \(h\) between the two adjacent points.&lt;/p&gt;
+
+&lt;h3 id=&quot;solution&quot;&gt;Solution&lt;/h3&gt;
+</description>
+        <pubDate>Wed, 20 Sep 2023 04:00:00 -0600</pubDate>
+        <link>http://localhost:4000/Computational-Sciences/2023/09/20/Differential-Difference-Equations/</link>
+        <guid isPermaLink="true">http://localhost:4000/Computational-Sciences/2023/09/20/Differential-Difference-Equations/</guid>
+        
+        
+      </item>
+    
+      <item>
+        <title>Four Special Matrices</title>
+        <description>&lt;h2 id=&quot;introduction&quot;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Consider a matrix, \(K_4=\begin{pmatrix}2 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\\ -1 &amp;amp; 2 &amp;amp; -1 &amp;amp; 0 \\\ 0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\\ 0 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\\ \end{pmatrix}\).&lt;/p&gt;
+
+&lt;p&gt;What are the special properties of this matrix?&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Symmetric&lt;/strong&gt;: \(K=K^T\)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Sparse (Tridiagonal)&lt;/strong&gt;: The point on sparsity is especially true when matrix K is something like \(100 \times 100\)&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Toeplitz&lt;/strong&gt;: Constant diagonals, i.e. we have \(2\) and \(-1\) across the diagonals&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Invertible&lt;/strong&gt;: Identifying that a matrix is invertible, is crucial to solving a system of equations. The standard way to find out if a matrix is invertible, is to row reduce it and represent it in upper triangular form. Let’s see how to do that.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;row-reduction&quot;&gt;Row Reduction&lt;/h2&gt;
+&lt;p&gt;Using the same \(K_4\) matrix discussed in the previous section,&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Picking the first column, where the pivot is \(k_{11}\) element. We make all the elements below the pivot, zero by performing row reduction operation \(R_2 \rightarrow R_2 - (k_{11}/k_{21})R_1\).&lt;/li&gt;
+&lt;/ul&gt;
+
+\[K_4=\begin{pmatrix} 2 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\ 0 &amp;amp; 3/2 &amp;amp; -1 &amp;amp; 0 \\ 0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\ 0 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\ \end{pmatrix}\]
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Next, move onto the 2nd column and again ensure that all elements below the pivot \(k_{22}\) are zero by performing the row reduction operation \(R_3 \rightarrow R_3 - (k_{22}/k_{32})R_2\).&lt;/p&gt;
+
+\[K_4= \begin{pmatrix} 2 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\ 0 &amp;amp; 3/2 &amp;amp; -1 &amp;amp; 0 \\ 0 &amp;amp; 0 &amp;amp; 4/3 &amp;amp; -1 \\ 0 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\ \end{pmatrix}\]
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Do the same thing for the 3rd column, \(R_4 \rightarrow R_4 - (k_{33}/k_{43})R_3\).&lt;/p&gt;
+
+\[K_4= \begin{pmatrix} 2 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\ 0 &amp;amp; 3/2 &amp;amp; -1 &amp;amp; 0 \\ 0 &amp;amp; 0 &amp;amp; 4/3 &amp;amp; -1 \\ 0 &amp;amp; 0 &amp;amp; 0 &amp;amp; 5/4 \\ \end{pmatrix}\]
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;For the final column, there’s nothing below the pivot value.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;We now have \(K_4\) reduced to the upper triangular form and the simple test of invertibility is to check if all pivots are non-zero. If they’re non-zero, then the matrix is invertible.&lt;/p&gt;
+
+&lt;!-- {: .note-title } --&gt;
+&lt;!-- {: .info } --&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;Don’t touch determinants when dealing with invertibility! Any numerical methods library will evaluate determinants this way by first converting the matrix into an upper triangular form and then taking the product of the diagonal elements. In this case, the determinant is \(5\)!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;circulant-matrix&quot;&gt;Circulant Matrix&lt;/h2&gt;
+&lt;p&gt;Consider another matrix similar to \(K_4\) (discussed in [[Introduction to Four Special Matrices]]), such that the value \(-1\) wraps around the row, Let’s call this matrix a circulant matrix and denote this as,&lt;/p&gt;
+
+\[C_4=\begin{pmatrix}2 &amp;amp; -1 &amp;amp; 0 &amp;amp; -1\\-1 &amp;amp; 2 &amp;amp; -1 &amp;amp; 0 \\0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\-1 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\\end{pmatrix}\]
+
+&lt;p&gt;Matrix \(C_4\) shares many properties with \(K_4\) such as:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Symmetric&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Sparse (not Tridiagonal though)&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Toeplitz&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;However, this matrix is not invertible! We can do the row reduction to verify this but there is another way to see this. If we multiply \(C_4\) with ones vector as shown in equation \((1)\), we get all zeros as the resulting vector and by definition a matrix is invertible if and only if it has zero vector in its null space!&lt;/p&gt;
+
+\[\begin{pmatrix} 2 &amp;amp; -1 &amp;amp; 0 &amp;amp; -1\\ -1 &amp;amp; 2 &amp;amp; -1 &amp;amp; 0 \\ 0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\ -1 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\ \end{pmatrix} \begin{pmatrix} 1 \\ 1 \\ 1 \\ 1 \\ \end{pmatrix}= \begin{pmatrix} 0 \\ 0 \\ 0 \\ 0 \\ \end{pmatrix} \tag{1}\]
+
+&lt;p&gt;We can write the above statement mathematically as well. Consider \(Cu=0\) and if \(C^{-1}\) exists, then \(C^{-1}Cu=C^{-1}0\) and \(u=0\). However, we have \(u=1\) hence it’s not invertible!&lt;/p&gt;
+
+&lt;h2 id=&quot;practical-origin-of-matrices&quot;&gt;Practical Origin of Matrices&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;Consider a system of \(4\) masses connected by springs (as shown below), and the matrix generated when trying to solve this system is \(K_4\).
+    &lt;div class=&quot;imgcap&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/K4.png&quot; alt=&quot;this slowpoke moves&quot; width=&quot;800&quot; /&gt;
+&lt;div class=&quot;thecap&quot;&gt;Figure 1: Spring Mass System with fixed ends. &lt;/div&gt;
+&lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Now, if we remove the fixed ends and just tie the masses together, we get matrix \(C_4\). This is where the term circulant comes from.
+    &lt;div class=&quot;imgcap&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/C4.png&quot; alt=&quot;this slowpoke moves&quot; width=&quot;800&quot; /&gt;
+&lt;div class=&quot;thecap&quot;&gt;Figure 2: Spring Mass System with ends atached to each other in circular fashion. &lt;/div&gt;
+&lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;Just as an example, take the spring mass system which gives \(K_4\) and free one end of support.
+    &lt;div class=&quot;imgcap&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/T4.png&quot; alt=&quot;this slowpoke moves&quot; width=&quot;800&quot; /&gt;
+&lt;div class=&quot;thecap&quot;&gt;Figure 3: Spring Mass System with one free end. &lt;/div&gt;
+&lt;/div&gt;
+
+    &lt;p&gt;In doing so, we get a new matrix \(T_4=\begin{pmatrix}1 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\-1 &amp;amp; 2 &amp;amp; -1 &amp;amp; 0 \\0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\0 &amp;amp; 0 &amp;amp; -1 &amp;amp; 2 \\\end{pmatrix}\).&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;For the sake of completeness, let’s free both ends.
+    &lt;div class=&quot;imgcap&quot;&gt;
+&lt;img src=&quot;https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/B4.png&quot; alt=&quot;this slowpoke moves&quot; width=&quot;800&quot; /&gt;
+&lt;div class=&quot;thecap&quot;&gt;Figure 4: Spring Mass System with both free ends. &lt;/div&gt;
+&lt;/div&gt;
+
+    &lt;p&gt;Now, we get another new matrix \(B_4=\begin{pmatrix}1 &amp;amp; -1 &amp;amp; 0 &amp;amp; 0\\-1 &amp;amp; 2 &amp;amp; -1 &amp;amp; 0 \\0 &amp;amp; -1 &amp;amp; 2 &amp;amp; -1 \\0 &amp;amp; 0 &amp;amp; -1 &amp;amp; 1 \\\end{pmatrix}\).&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;All these four special matrices are &lt;strong&gt;Symmetric&lt;/strong&gt; and &lt;strong&gt;Sparse&lt;/strong&gt;. When it comes to invertibility, \(K\) and \(T\) are invertible, but \(C\) and \(B\) aren’t. A physics intuition is that the systems with some sort of support (fixed end in this case) results in invertible matrices while the unsupported systems give non-invertible matrices.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;\(T\) and \(B\) are not Toeplitz!&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Another thing is, \(K\) and \(T\) are positive definite (pivots are all positive in upper triangular form) while \(C\) and \(B\) are positive semi-definite (pivots are zeros or positive in upper triangular form).&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;references&quot;&gt;References&lt;/h2&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://ocw.mit.edu/courses/18-085-computational-science-and-engineering-i-fall-2008/&quot;&gt;MITOCW 18.085 Computational Science and Engineering 1&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Mon, 11 Sep 2023 04:00:00 -0600</pubDate>
+        <link>http://localhost:4000/Computational-Sciences/2023/09/11/Four-Special-Matrices/</link>
+        <guid isPermaLink="true">http://localhost:4000/Computational-Sciences/2023/09/11/Four-Special-Matrices/</guid>
+        
+        
+      </item>
+    
+  </channel>
+</rss>

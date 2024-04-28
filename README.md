@@ -1,2 +1,1 @@
-# BardBungle
-Neural Machine Translation using Transformers
+# Neural Machine Translation using Transformers
