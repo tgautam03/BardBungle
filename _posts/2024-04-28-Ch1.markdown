@@ -43,6 +43,7 @@ df.drop("id", axis=1, inplace=True)
 # Renaming columns                        
 df.rename(columns={"og": "shakespeare eng", "t": "modern eng"}, inplace=True)   
 ```
+
 | shakespeare eng | modern eng |
 |-----------------|------------|
 |You do not meet a man but frowns: | Every man you meet these days is frowning.|
