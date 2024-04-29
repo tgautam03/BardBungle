@@ -7,6 +7,8 @@ date:   2024-04-28 10:00:00
 
 ---
 
+**This post is a supplimentary material for my [YouTube video](https://www.youtube.com/watch?v=zHDap0WOeGI) which is the first part of a series on Neural Machine Translation. Please watch this video before going through this blog post.**
+
 ## Introduction
 
 Whenever someone talks about Transformer now a days, more often than not, they mean Generative models like GPT. However, not a lot of people know that originally Transformers were designed for Machine Translation. A user would input a sentence in one language and the model would translate that to another. This was done using an encoder-decoder styled architecture, where the encoder accepts the input and understands the context in this particular sentence. This information is then passed over to the decoder which starts generating the translation. 
@@ -377,3 +379,40 @@ print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_
 > Note that the shape of the Tensors are equal now (all sequences in the dataset have same amount of tokens).
 
 ## Token Embedding
+Right now we are at a stage where the sentences are represented as a sequence of integers and there is some sense of semantics in these integers but wouldn't it be better to represent the tokens as vectors rather than simple integers? How about the vectors that learn alongside the neural net and adjust themselves based on the dataset. 
+
+This can be done using the `Embedding` layer from PyTorch. You can think of it like a linear layer whose input neurons are equal to the number of tokens in the vocabulary and the output neurons give the desired embedding vector. We can adjust the length of this output and the higher the dimension of this vector, the more information it can encode. 
+
+As we have inputs to the encoder and the decoder, we need token embedding for both.
+
+```py
+# Token Embeddings mapping each token in the src/trg vocab to a vector of length emb
+src_token_emb = torch.nn.Embedding(num_embeddings=src_vocab_len, embedding_dim=emb)
+trg_token_emb = torch.nn.Embedding(num_embeddings=trg_vocab_len, embedding_dim=emb)
+```
+
+Passing the tokenized (and numericalized) dataset through these layers transform each token into a vector of length `emb`. Figure 2 and 3 shows the embedding matrix for one of the shakespeare and modern english sentences respectively.
+
+```
+-------------------Shakespeare Dataset-------------------------
+Original Sentence:   You do not meet a man but frowns: 
+Tokenized Sentence (1st 12 tokens):  ['You', 'do', 'not', 'meet', 'a', 'man', 'but', 'frown', 's', ':', '[EOS]', '[PAD]']
+Numericalized Sentence (1st 12 tokens):  tensor([ 107,   48,   23,  427,   12,   87,   50, 1530,    6,   26,    2,    0])
+Token Embedded Sentence (1st 12 tokens): 
+```
+<div class="imgcap">
+<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/src_tok_emb.png" alt="this slowpoke moves"  width="800"/>
+<div class="thecap">Figure 2: Embedding Vectors for tokens in the shakespeare sentence. </div>
+</div>
+
+```
+-----------------Modern English Dataset-------------------------
+Original Sentence:  Every man you meet these days is frowning.
+Tokenized Sentence (1st 12 tokens):  ['Every', 'man', 'you', 'meet', 'these', 'days', 'is', 'frown', 'ing', '.', '[EOS]', '[PAD]']
+Numericalized Sentence (1st 12 tokens):  tensor([   1, 1953,   66,   10,  506,  161,  842,   20, 1534,   38,    5,    0])
+Token Embedded Sentence (1st 12 tokens): 
+```
+<div class="imgcap">
+<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/trg_tok_emb.png" alt="this slowpoke moves"  width="800"/>
+<div class="thecap">Figure 3: Embedding Vectors for tokens in the modern english sentence. </div>
+</div>
