@@ -269,6 +269,111 @@ Numericalized modern english Sentence:  [1953, 66, 10, 506, 161, 842, 20, 1534, 
 If you look at the complete dataset, you'll see that different sentences contains different number of tokens. To load multiple sentences at once and utilize parallelization, we'll have to pad them with zeros and make them of equal lengths. I decided the maximum sequence length by looking at the Cumulative Density Function of the lengths of different numericalized sequences.
 
 <div class="imgcap">
-<img src="https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/K4.png" alt="this slowpoke moves"  width="800"/>
-<div class="thecap">Figure 1: Spring Mass System with fixed ends. </div>
+<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/cdf.png" alt="this slowpoke moves"  width="800"/>
+<div class="thecap">Figure 1: CDF of the sequence lengths in the dataset. </div>
 </div>
+
+In Figure 1, we can see that most of the sentences are under 100 tokens long and the maximum sequence length is just over 200. So to cover all the possible sequence sizes, I'll go with the max sequence length of 256.
+
+```py
+# Max Sequence Length
+max_seq_len = 256
+```
+
+Next step is to add these padding tokens alongside the "Beginning of Sentence [BOS]" and "End of Sentence [EOS]" tokens. To understand how this is done, we need a very basic understand of how a Transformer works. I've covered this topic in much more detail in my [YouTube video](https://www.youtube.com/watch?v=zHDap0WOeGI), so here I will just write the conclusion and showcase the final code. 
+
+Conclusion:
+
+- [EOS] token for the input to the encoder (just before the padding starts).
+
+- [BOS] token for the input to the decoder (at the very start of the sentence).
+
+- [EOS] token for the output to the decoder (just before the padding starts).
+
+Remember while training the tokenizer I reserved:
+
+- 0 for padding
+
+- 1 for BOS
+
+- 2 for EOS
+
+```py
+# Input to the encoder
+def src_processing(tokenized_text, max_seq_len):
+    # Padding or trimming to fit the max sequence length
+    if len(tokenized_text) < max_seq_len:
+        # Add EOS token at the end
+        tokenized_text += [2]
+        left = max_seq_len - len(tokenized_text)
+        padding = [0] * left
+        tokenized_text += padding
+    else:
+        tokenized_text = tokenized_text[:max_seq_len-1]
+        # Add EOS token at the end
+        tokenized_text += [2]
+
+    return tokenized_text
+
+# Input to Decoder
+def input_trg_processing(tokenized_text, max_seq_len):
+    # Add BOS token at the start
+    tokenized_text = [1] + tokenized_text
+    # Padding or trimming to fit the max sequence length
+    if len(tokenized_text) < max_seq_len:
+        left = max_seq_len - len(tokenized_text)
+        padding = [0] * left
+        tokenized_text += padding
+    else:
+        tokenized_text = tokenized_text[:max_seq_len]
+    return tokenized_text
+
+# Output for Decoder
+def output_trg_processing(tokenized_text, max_seq_len):
+    # Padding or trimming to fit the max sequence length
+    if len(tokenized_text) < max_seq_len:
+        # Add EOS token at the end
+        tokenized_text += [2]
+        left = max_seq_len - len(tokenized_text)
+        padding = [0] * left
+        tokenized_text += padding
+    else:
+        tokenized_text = tokenized_text[:max_seq_len-1]
+        # Add EOS token at the end
+        tokenized_text += [2]
+    return tokenized_text
+```
+
+We can now call the above defined functions and preprocess the dataset.
+
+```py
+# Padding/Truncating src
+src_id = [src_processing(id, max_seq_len) for id in src_id] 
+
+# Padding/Truncating trg
+input_trg_id = [input_trg_processing(id, max_seq_len) for id in trg_id] 
+output_trg_id = [output_trg_processing(id, max_seq_len) for id in trg_id] 
+
+# Moving everything to torch tensors
+src_id = torch.tensor(src_id)
+input_trg_id = torch.tensor(input_trg_id)
+output_trg_id = torch.tensor(output_trg_id)
+
+print("Src Shapes: {}; dtype: {}".format(src_id.shape, src_id.dtype))
+print("Input Trg Shapes: {}; dtype: {}".format(input_trg_id.shape, input_trg_id.dtype))
+print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_id.dtype))
+```
+```
+# Moving everything to torch tensors
+src_id = torch.tensor(src_id)
+input_trg_id = torch.tensor(input_trg_id)
+output_trg_id = torch.tensor(output_trg_id)
+
+print("Src Shapes: {}; dtype: {}".format(src_id.shape, src_id.dtype))
+print("Input Trg Shapes: {}; dtype: {}".format(input_trg_id.shape, input_trg_id.dtype))
+print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_id.dtype))
+```
+
+> Note that the shape of the Tensors are equal now (all sequences in the dataset have same amount of tokens).
+
+## Token Embedding
