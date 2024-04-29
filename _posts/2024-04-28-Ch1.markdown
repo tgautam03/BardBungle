@@ -7,7 +7,7 @@ date:   2024-04-28 10:00:00
 
 ---
 
-**This post is a supplimentary material for my [YouTube video](https://www.youtube.com/watch?v=zHDap0WOeGI) which is the first part of a series on Neural Machine Translation. Please watch this video before going through this blog post.**
+**This post is a supplimentary material for my [YouTube video](https://www.youtube.com/watch?v=zHDap0WOeGI) which is the first part of a series on Neural Machine Translation. Please watch the video before going through this blog post.**
 
 ## Introduction
 
@@ -366,14 +366,9 @@ print("Input Trg Shapes: {}; dtype: {}".format(input_trg_id.shape, input_trg_id.
 print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_id.dtype))
 ```
 ```
-# Moving everything to torch tensors
-src_id = torch.tensor(src_id)
-input_trg_id = torch.tensor(input_trg_id)
-output_trg_id = torch.tensor(output_trg_id)
-
-print("Src Shapes: {}; dtype: {}".format(src_id.shape, src_id.dtype))
-print("Input Trg Shapes: {}; dtype: {}".format(input_trg_id.shape, input_trg_id.dtype))
-print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_id.dtype))
+Src Shapes: torch.Size([51787, 256]); dtype: torch.int64
+Input Trg Shapes: torch.Size([51787, 256]); dtype: torch.int64
+Output Trg Shapes: torch.Size([51787, 256]); dtype: torch.int64
 ```
 
 > Note that the shape of the Tensors are equal now (all sequences in the dataset have same amount of tokens).
@@ -429,7 +424,7 @@ As these embedding layers are essentially learnable, it makes sense to wrap this
 
 ```py
 class Transformer(torch.nn.Module):
-    def __init__(self, emb, _, _, src_vocab_len, trg_vocab_len, device="cpu):
+    def __init__(self, emb, _, _, src_vocab_len, trg_vocab_len, device="cpu"):
         super().__init__()
         # Device and layers
         self.device = device
@@ -480,7 +475,7 @@ Tokenized Sentence (1st 8 tokens):  ['The', 'boy', 'thank', 'ed', 'the', 'king',
 
 Numericalized Sentence (1st 8 tokens):  [83, 360, 496, 39, 9, 118, 2, 0]
 
-Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99   1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99 1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
 
 -------------------Second Sentence-------------------------
 Original Sentence:  The king thanked the boy
@@ -489,7 +484,7 @@ Tokenized Sentence (1st 8 tokens):  ['The', 'king', 'thank', 'ed', 'the', 'boy',
 
 Numericalized Sentence (1st 8 tokens):  [83, 118, 496, 39, 9, 360, 2, 0]
 
-Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99   1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99 1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
 ```
 
 In the original "Attention is all you need" paper, to add positional information to the embeddings, they used static vectors, but I'm again going to use the `Embedding` layer. The difference here (compared to the token embedding layer) is that I'm now mapping each position in the sequence to a vector of length equal to the embedding dimension. In simple words, as I have the max sequence length of 256, the positional embedding layer creates a unique vector for each of the 256 positions in the sequence. 
