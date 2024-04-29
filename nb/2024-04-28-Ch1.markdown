@@ -396,8 +396,11 @@ Passing the tokenized (and numericalized) dataset through these layers transform
 ```
 -------------------Shakespeare Dataset-------------------------
 Original Sentence:   You do not meet a man but frowns: 
+
 Tokenized Sentence (1st 12 tokens):  ['You', 'do', 'not', 'meet', 'a', 'man', 'but', 'frown', 's', ':', '[EOS]', '[PAD]']
+
 Numericalized Sentence (1st 12 tokens):  tensor([ 107,   48,   23,  427,   12,   87,   50, 1530,    6,   26,    2,    0])
+
 Token Embedded Sentence (1st 12 tokens): 
 ```
 <div class="imgcap">
@@ -408,11 +411,174 @@ Token Embedded Sentence (1st 12 tokens):
 ```
 -----------------Modern English Dataset-------------------------
 Original Sentence:  Every man you meet these days is frowning.
+
 Tokenized Sentence (1st 12 tokens):  ['Every', 'man', 'you', 'meet', 'these', 'days', 'is', 'frown', 'ing', '.', '[EOS]', '[PAD]']
+
 Numericalized Sentence (1st 12 tokens):  tensor([   1, 1953,   66,   10,  506,  161,  842,   20, 1534,   38,    5,    0])
+
 Token Embedded Sentence (1st 12 tokens): 
 ```
 <div class="imgcap">
 <img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/trg_tok_emb.png" alt="this slowpoke moves"  width="800"/>
 <div class="thecap">Figure 3: Embedding Vectors for tokens in the modern english sentence. </div>
 </div>
+
+> Note that I'm just showing the 1st 12 tokens of the sentence in the above figures.
+
+As these embedding layers are essentially learnable, it makes sense to wrap this into the Transformer itself.
+
+```py
+class Transformer(torch.nn.Module):
+    def __init__(self, emb, _, _, src_vocab_len, trg_vocab_len, device="cpu):
+        super().__init__()
+        # Device and layers
+        self.device = device
+        
+        # Token Embeddings
+        self.src_token_emb = torch.nn.Embedding(src_vocab_len, emb)
+        self.trg_token_emb = torch.nn.Embedding(trg_vocab_len, emb)
+
+        # Positional Embeddings
+
+        # Encoder
+
+        # Decoder 
+
+        # Generator
+
+    def forward(self, src_in, trg_in, e_mask=None, d_mask=None):
+        # SRC Tokenized and pos embedded
+        src_in = self.src_token_emb(src_in) 
+        
+        # TRG Tokenized and pos embedded
+        trg_in = self.trg_token_emb(trg_in) 
+        
+        # Encoder
+        
+        # Decoder
+        
+        # Generator
+        
+
+        return 
+```
+
+> The template above acts as a guide to building a Transformer and we will fill different parts of it in upcoming blog posts.
+
+## Positional Encoding
+After Token embedding, each token in the sequence is represented as a vector. A problem here is that there is no sense of position in this matrix. Let me explain what I mean here. Consider the two sentences
+- The boy hit the ball.
+- The ball hit the boy.
+
+Semantically, these two sentences couldn't be any more different. But, if I look at the token embedding vectors for the word boy in the two senteces, they're exactly same. Moreover, a Transformer is designed to processes the complete sentence at once, making it crucial to add the positional information to each token.
+
+```
+-------------------First Sentence-------------------------
+Original Sentence:  The boy thanked the king
+
+Tokenized Sentence (1st 8 tokens):  ['The', 'boy', 'thank', 'ed', 'the', 'king', '[EOS]', '[PAD]']
+
+Numericalized Sentence (1st 8 tokens):  [83, 360, 496, 39, 9, 118, 2, 0]
+
+Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99   1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+
+-------------------Second Sentence-------------------------
+Original Sentence:  The king thanked the boy
+
+Tokenized Sentence (1st 8 tokens):  ['The', 'king', 'thank', 'ed', 'the', 'boy', '[EOS]', '[PAD]']
+
+Numericalized Sentence (1st 8 tokens):  [83, 118, 496, 39, 9, 360, 2, 0]
+
+Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99   1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+```
+
+In the original "Attention is all you need" paper, to add positional information to the embeddings, they used static vectors, but I'm again going to use the `Embedding` layer. The difference here (compared to the token embedding layer) is that I'm now mapping each position in the sequence to a vector of length equal to the embedding dimension. In simple words, as I have the max sequence length of 256, the positional embedding layer creates a unique vector for each of the 256 positions in the sequence. 
+
+```py
+# Positional Encodings
+src_pos_enc = torch.nn.Embedding(embedding_dim=256, num_embeddings=max_seq_len)
+trg_pos_enc = torch.nn.Embedding(embedding_dim=256, num_embeddings=max_seq_len)
+```
+
+Now when these positional encodings are added to the embedding vectors, we can see that the resulting vector represetnation of a word will depend on it's position in the sentence as well.
+
+```py
+# Sentence 1
+stn1 = ["The boy thanked the king"]
+# Tokenizing and Numericalizing
+stn1_id = modern.EncodeAsIds(list(stn1))
+# Token Embedding + Positional Encoding
+stn1_emb_pos_enc = src_token_emb(torch.tensor(stn1_id))[0] + src_pos_enc(torch.arange(max_seq_len, device="cpu"))
+
+# Sentence 2
+stn2 = ["The king thanked the boy"]
+# Tokenizing and Numericalizing
+stn2_id = modern.EncodeAsIds(list(stn2))
+# Token Embedding + Positional Encoding
+stn2_emb_pos_enc = src_token_emb(torch.tensor(stn2_id))[0] + src_pos_enc(torch.arange(max_seq_len, device="cpu"))
+
+print("Embedding Vector with positional encoding for word boy in sentence 1: ", np.round(stn1_emb_pos_enc[1].detach().numpy(), 3))
+
+print("Embedding Vector with positional encoding for word boy in sentence 2: ", np.round(stn2_emb_pos_enc[5].detach().numpy(), 3))
+```
+```
+Embedding Vector with positional encoding for word boy in sentence 1:  [-0.261 -0.341 -1.129  1.815  0.275 -1.107 -0.948 -0.136  1.773 -2. -1.442 -0.458 -0.83   1.429 -0.223 -4.107]
+
+Embedding Vector with positional encoding for word boy in sentence 2:  [ 0.597  0.979 -1.448 -2.104 -0.079 -1.969 -1.376 -0.228  1.174 -1.011 -4.062 -1.    -1.693 -1.97   0.462 -1.298]
+```
+
+> Note that when I'm actually using the position embedding layer, the input is a sequence of integers. What this means is that, the position encoding vectors do not depend on the tokens itself. Instead they only care about the position of the token in a sequence.
+
+In context of our shakespeare dataset, this positional information is added to the token embedding vectors for both input to the encoder and decoder. These are then learned together alongside the neural network (and the token embeddings). Similar to the token embedding, these layers (one for the source and one for the target) are rolled into the Transformer definition as well.
+
+```py
+class Transformer(torch.nn.Module):
+    def __init__(self, emb, _, max_seq_len, src_vocab_len, trg_vocab_len, _, device="cpu"):
+        super().__init__()
+        # Device and layers
+        self.device = device
+        
+        # Token Embeddings
+        self.src_token_emb = torch.nn.Embedding(src_vocab_len, emb)
+        self.trg_token_emb = torch.nn.Embedding(trg_vocab_len, emb)
+
+        # Positional Embeddings
+        self.src_pos_enc = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
+        self.trg_pos_enc = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
+
+        # Encoder
+
+        # Decoder 
+
+        # Generator
+
+    def forward(self, src_in, trg_in, e_mask=None, d_mask=None):
+        # SRC Tokenized
+        src_in = self.src_token_emb(src_in) 
+        # pos embedded
+        b, t, emb = src_in.shape
+        src_in = src_in + self.src_pos_enc(torch.arange(t, device=self.device))[None, :, :].expand(b, t, emb)
+        
+        # TRG Tokenized
+        trg_in = self.trg_token_emb(trg_in) 
+        # pos embedded
+        b, t, emb = trg_in.shape
+        trg_in = trg_in + self.trg_pos_enc(torch.arange(t, device=self.device))[None, :, :].expand(b, t, emb)
+        
+        # Encoder
+        
+        # Decoder
+        
+        # Generator
+        
+
+        return 
+```
+
+## Conclusion
+In this blog post, we covered:
+- Dataset loading, tokenization and preprocessing.
+- Token Embedding
+- Positional Encoding
+
+Next, we will look into the Encoder part of the Transformer.
