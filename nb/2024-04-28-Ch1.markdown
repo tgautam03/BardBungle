@@ -1,0 +1,274 @@
+---
+layout: post
+comments: false
+title:  "Chapter 1: All Things dataset..."
+excerpt: "Dataset is at the heart of every Machine Learning task. In this post, I've explored the Shakespeare Dataset and explained concepts related to tokenization, Token Embedding and Positional Encoding"
+date:   2024-04-28 10:00:00
+
+---
+
+## Introduction
+
+Whenever someone talks about Transformer now a days, more often than not, they mean Generative models like GPT. However, not a lot of people know that originally Transformers were designed for Machine Translation. A user would input a sentence in one language and the model would translate that to another. This was done using an encoder-decoder styled architecture, where the encoder accepts the input and understands the context in this particular sentence. This information is then passed over to the decoder which starts generating the translation. 
+
+In this work, I'll be focusing on the task of Machine Translation using the "Shakespeare" dataset. Starting with:
+
+- The dataset (which contains the excerpts from Shakespeare and their meaning), how it is tokenized and preprocessed for training the Neural Net.
+
+- I will then spend some time discussing the token embeddings and positional encodings. The special thing about these embeddings is that they will be learned alongside the network parameters.
+
+- After that, I'll move on to the Transformer Neural Net, where
+
+    - I'll delve into the details that make up the encoder, specifically I'll focus more on the Multi-head Self Attention and how it learns the relationship between different words. The hope here is that the encoder can understand the context in the input sentence, because
+
+    - This will guide the decoder (when prompted), to start translating the sentence. 
+
+- I will also discuss the training procedure in detail and more specifically how the loss function enables the generator to make accurate predictions.
+
+## Dataset
+
+For training the Neural Net, I'm working with [shakespearefy](https://www.kaggle.com/datasets/garnavaurha/shakespearify) dataset. One thing that I'm doing different (or atleast something that's not a standard practice) is that I'm not splitting the dataset into training and testing subsets. I have two reasons as to why I'm doing this:
+
+- It's a really small dataset of size ~50k
+
+- My goal is to just understand how an autoregressive transformer works.
+
+After downloading the dataset, you'll notice that it is in a simple csv format. Loading and visualizing it is quite easy.
+
+```py
+# Loading the csv file
+df = pd.read_csv("../data/shk2mod.csv", index_col=0)                            
+# Dropping the index column                                 
+df.drop("id", axis=1, inplace=True)                  
+# Renaming columns                        
+df.rename(columns={"og": "shakespeare eng", "t": "modern eng"}, inplace=True)   
+
+# Visualizing Sentences
+print(df)
+```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>shakespeare eng</th>
+      <th>modern eng</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>You do not meet a man but frowns:</td>
+      <td>Every man you meet these days is frowning.</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>our bloods  No more obey the heavens than our...</td>
+      <td>Our bodies are in agreement with the planetar...</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>But what's the matter?</td>
+      <td>What's wrong?</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>His daughter, and the heir of's kingdom, whom...</td>
+      <td>The king wanted his daughter, the only heir to...</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>she's wedded;  Her husband banish'd; she impr...</td>
+      <td>She's married, her husband is banished, she's...</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>51782</th>
+      <td>He hath not told us of the captain yet.</td>
+      <td>He hasn't told us about that captain yet.</td>
+    </tr>
+    <tr>
+      <th>51783</th>
+      <td>When that is known and golden time convents, ...</td>
+      <td>When that's taken care of and the time is conv...</td>
+    </tr>
+    <tr>
+      <th>51784</th>
+      <td>Meantime, sweet sister,  We will not part fro...</td>
+      <td>Until then, sweet sister-in-law, we won't leav...</td>
+    </tr>
+    <tr>
+      <th>51785</th>
+      <td>Cesario, come,  For so you shall be, while yo...</td>
+      <td>Cesario, come here. You'll be Cesario to me wh...</td>
+    </tr>
+    <tr>
+      <th>51786</th>
+      <td>When that I was and a little tiny boy,    With...</td>
+      <td>When I was just a tiny little boy,With hey, ho...</td>
+    </tr>
+  </tbody>
+</table>
+<p>51787 rows × 2 columns</p>
+</div>
+
+I will be training a Transformer to translate Shakespeare sentences into modern english. I will store these in variables `src` and `trg` respectively.
+
+```py
+import pandas as pd
+# Converting dataframe to numpy
+d = df.to_numpy()           
+# Splitting columns into source and target
+src, trg = d[:,0], d[:,1]   
+```
+
+##  Tokenizer
+Right now the data that we have is in form of a list of raw strings. We can't do anything with that. So, we have to find a way to represent a sentence as a sequence of numbers (also known as Tokens). These tokens could be individual characters/words in a sentence or something in-between.
+
+However, let's not get too much ahead of ourselves and first understand how exactly this tokenization works.
+
+### Character Level Tokenization 
+For **Character Level Tokenization**, a vocabulary is setup based on all the characters in the dataset. This includes the letters as well as the special characters (like `,`, `.`, `'`, `"`, etc.). The sentences are then split into multiple characters and a unique number is assigned to each character in the vocabulary. 
+
+Consider a Sentence:  `Just three words`
+
+If we use character level tokenization, the resulting Tokenized Sentence would be:  `['J','u','s','t',' ','t','h','r','e','e',' ','w','o','r','d','s']`
+
+The drawback of using **Character Level Tokenization** is that it can make the sequences extremely long (a three word sentence became a sequence of length 16)  and there is no linguistic intuition on the character level. What I mean here is that in our languages there's a lot more context between words as compared to the characters (we can't make much sense of the individual characters, it's the words that make sense to us). 
+
+### Word Level Tokenization
+In this case, a vocabulary is setup based on all the words in the dataset. The sentences are then split into multiple words and a unique number is assigned to each word in the vocabulary.
+
+While this solves the problem of long sequences, in **Word level tokenization** the size of the vocabulary itself becomes too large (for our Shakespeare dataset, it will be over 70k different tokens!). 
+
+This begs the question, can't we get the best of both worlds? **The answer lies in sub-word tokenization**.
+
+### Sub-Word Tokenization
+To perform sub-word tokenization, I decided to go with [SentencePiece](https://github.com/google/sentencepiece) tokenizer. It is a data driven (trained using the dataset) tokenizer where by setting the vocabulary size, we can control the level of subword tokenization. During training, it generates tokens optimally based on the dataset itself and the vocabulary size (you can think of it storing the most common subwords in the dataset, but for more details please check out the official GitHub repository).
+
+As an example, let's start with the modern english sentences and set a really small vocabulary size of 100.
+
+```py
+import sentencepiece as spm
+# Training Tokenizer of the dataset
+spm.SentencePieceTrainer.Train(
+    sentence_iterator=iter(trg),            # Load dataset
+    pad_id=0, bos_id=1, eos_id=2, unk_id=3, # Reserve preprocessing tokens
+    model_prefix="modern_en_vs100",         # Where to save the model
+    vocab_size=100)                         # Vocab Size  
+```
+
+This creates two files named *modern_en.model* and *modern_en.vocab*. We can open *.vocab* file and it is a list of each token in the vocabulary (notice how it's almost a character level tokenization). We can also look at the way sentences will be tokenized using *.model* file.
+
+```py
+# Loading the tokenizer model
+modern = spm.SentencePieceProcessor(model_file="modern_en_vs100.model") 
+print("Original Sentence: ", trg[0])
+print("Tokenized Sentence: ", modern.EncodeAsPieces(trg[0]))
+```
+```
+Original Sentence:  Every man you meet these days is frowning.
+Tokenized Sentence:  ['▁', 'E', 've', 'r', 'y', '▁ma', 'n', '▁you', '▁me', 'e', 't', '▁the', 's', 'e', '▁', 'd', 'a', 'y', 's', '▁', 'i', 's', '▁', 'f', 'r', 'ow', 'n', 'ing', '.']
+```
+
+> Note that, _ is put at the start of a word to indicate a new word in the sentence. You can think of it like a space between words (as we're not storing widespace as a token). 
+
+The way I picked vocabulary size was to ensure that the words remain intact but the common suffixes (like 's', 'tion', 'ing', etc.) are separated.
+
+```py
+# Training Tokenizer of the dataset
+spm.SentencePieceTrainer.Train(
+    sentence_iterator=iter(trg),            # Load dataset
+    pad_id=0, bos_id=1, eos_id=2, unk_id=3, # Reserve preprocessing tokens
+    model_prefix="modern_en",               # Where to save the model
+    vocab_size=5000)                        # Vocab Size  
+```
+```py
+# Loading the tokenizer model
+modern = spm.SentencePieceProcessor(model_file="modern_en.model") 
+print("Original Sentence: ", trg[0])
+print("Tokenized Sentence: ", modern.EncodeAsPieces(trg[0]))
+```
+```
+Original Sentence:  Every man you meet these days is frowning.
+Tokenized Sentence:  ['▁Every', '▁man', '▁you', '▁meet', '▁these', '▁days', '▁is', '▁frown', 'ing', '.']
+```
+
+Notice how in the tokenized sentence, the word "frown" is kept but "ing" is separated. This is useful, because now "ing" can be used after other words (like "cry", "try", etc.) and keep the vocabulary size reasonable (by not storing all the different words separately).
+
+Let's now do the same thing for shakespeare sentences as well. We can pick a different vocab size here but let's keep it simple and use the same vocab size as before.
+
+```py
+# Training shakespeare tokenizer
+spm.SentencePieceTrainer.Train(
+    sentence_iterator=iter(src),            # Load dataset
+    pad_id=0, bos_id=1, eos_id=2, unk_id=3, # Reserve preprocessing tokens
+    model_prefix="shakespeare_en",          # Where to save the model
+    vocab_size=5000)                        # Vocab Size
+```
+```py
+# Loading the tokenizer model
+shakespeare = spm.SentencePieceProcessor(model_file="shakespeare_en.model") 
+print("Original Sentence: ", src[0])
+print("Tokenized Sentence: ", shakespeare.EncodeAsPieces(src[0]))
+```
+```
+Original Sentence:   You do not meet a man but frowns: 
+Tokenized Sentence:  ['▁You', '▁do', '▁not', '▁meet', '▁a', '▁man', '▁but', '▁frown', 's', ':']
+```
+
+A computer only understands numbers. We can easily convert these tokens into unique integers using SentencePiece.
+
+```py
+# Encoding src
+shakespeare = spm.SentencePieceProcessor(model_file="../trained_models/tokenizer/shakespeare_en.model")
+src_id = shakespeare.EncodeAsIds(list(src))
+
+# Encoding trg
+modern = spm.SentencePieceProcessor(model_file="../trained_models/tokenizer/modern_en.model")
+trg_id = modern.EncodeAsIds(list(trg))
+
+print("Original Shakespeare Sentence: ", src[0])
+print("Tokenized Shakespeare Sentence: ", shakespeare.EncodeAsPieces(src[0]))
+print("Numericalized Shakespeare Sentence: ", src_id[0])
+print("\n")
+print("Original modern english Sentence: ", trg[0])
+print("Tokenized modern english Sentence: ", modern.EncodeAsPieces(trg[0]))
+print("Numericalized modern english Sentence: ", trg_id[0])
+```
+```
+Original Shakespeare Sentence:   You do not meet a man but frowns: 
+Tokenized Shakespeare Sentence:  ['▁You', '▁do', '▁not', '▁meet', '▁a', '▁man', '▁but', '▁frown', 's', ':']
+Numericalized Shakespeare Sentence:  [107, 48, 23, 427, 12, 87, 50, 1530, 6, 26]
+
+
+Original modern english Sentence:  Every man you meet these days is frowning.
+Tokenized modern english Sentence:  ['▁Every', '▁man', '▁you', '▁meet', '▁these', '▁days', '▁is', '▁frown', 'ing', '.']
+Numericalized modern english Sentence:  [1953, 66, 10, 506, 161, 842, 20, 1534, 38, 5]
+```
+
+## Preprocessing
+If you look at the complete dataset, you'll see that different sentences contains different number of tokens. To load multiple sentences at once and utilize parallelization, we'll have to pad them with zeros and make them of equal lengths. I decided the maximum sequence length by looking at the Cumulative Density Function of the lengths of different numericalized sequences.
+
+<div class="imgcap">
+<img src="https://raw.githubusercontent.com/tgautam03/Computational-Sciences/gh-pages/assets/2023-09-11-Four-Special-Matrices/K4.png" alt="this slowpoke moves"  width="800"/>
+<div class="thecap">Figure 1: Spring Mass System with fixed ends. </div>
+</div>
