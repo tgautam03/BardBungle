@@ -99,7 +99,7 @@ class DecoderLayer(torch.nn.Module):
         return x
     
 class Transformer(torch.nn.Module):
-    def __init__(self, emb, heads, max_seq_len, src_vocab_len, trg_vocab_len, num_layers=6, device="cpu"):
+    def __init__(self, emb, heads, max_seq_len, src_vocab_len, trg_vocab_len, num_layers, device="cpu"):
         super().__init__()
         # Device and layers
         self.num_layers = num_layers
