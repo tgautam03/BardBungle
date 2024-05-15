@@ -14,6 +14,8 @@ from transformer import Transformer
 if __name__ == "__main__":
     # Getting variables
     parser = argparse.ArgumentParser(description='Training Transformer')
+    parser.add_argument('--tiny_transformer', type=bool, default=False, required=False, help='Train a Tiny Transformer')
+    parser.add_argument('--max_seq_len', type=int, default=256, required=False, help='Max Sequence Length')
     parser.add_argument('--emb', type=int, required=True, help='Embedding Dimension')
     parser.add_argument('--heads', type=int, required=True, help='Number of Attention Heads')
     parser.add_argument('--layers', type=int, required=True, help='Number of encoder/decoder layers')
@@ -45,11 +47,26 @@ if __name__ == "__main__":
     modern = spm.SentencePieceProcessor(model_file="../trained_models/tokenizer/modern_en.model")
     trg_id = modern.EncodeAsIds(list(trg))
 
+    # Small Sentences?
+    tiny_transformer = args.tiny_transformer
+    if tiny_transformer:
+        # Filter out small sequences
+        src_id_small = []
+        trg_id_small = []
+
+        for (src_snt, trg_snt) in zip(src_id, trg_id):
+            if len(src_snt) <= 10 and len(trg_snt) <= 10:
+                src_id_small.append(src_snt)
+                trg_id_small.append(trg_snt)
+
+        src_id = src_id_small
+        trg_id = trg_id_small
+
     ####################################
     ##### Padding and Preprocessing ####
     ####################################
     # Max Sequence Length
-    max_seq_len = 256
+    max_seq_len = args.max_seq_len
     # Padding/Truncating src
     src_id = [src_processing(id, max_seq_len) for id in src_id] 
     # Padding/Truncating trg
@@ -73,24 +90,25 @@ if __name__ == "__main__":
     output_trg_loader = torch.utils.data.DataLoader(dataset=output_trg_id, batch_size=batch_size)
     # Hyperparameters
     lr = 0.00001
-    num_epochs = 500
+    num_epochs = 3000
     device = "cuda"
     emb, heads, layers = args.emb, args.heads, args.layers
     print("Embedding Dim: {}; Attention Heads: {}, Number of layers: {}; Batch Size: {}".format(emb, heads, layers, batch_size))
     model = Transformer(emb=emb, heads=heads, max_seq_len=max_seq_len, 
                         src_vocab_len=shakespeare.vocab_size(), trg_vocab_len=modern.vocab_size(),
                         num_layers=layers, device=device).to(device)
-    model.load_state_dict(torch.load("../trained_models/model_emb256_heads8_layers2.pt"))
+    model.load_state_dict(torch.load("../trained_models/model_emb32_heads4_layers1.pt"))
     opt = torch.optim.Adam(lr=lr, params=model.parameters())
 
     # train_loss_record = []
-    train_loss_record = list(np.load("../trained_models/train_loss_record.npy"))
-
-    start_err = train_loss_record[-1]
     # start_err = 10
+
+    train_loss_record = list(np.load("../trained_models/train_loss_record.npy"))
+    start_err = train_loss_record[-1]
+
     print("Start error: ", start_err)
     print("Training...")
-    for epoch in range(400, num_epochs+1):
+    for epoch in range(2000, num_epochs):
         train_losses = []
         for (src_in, trg_in, trg_out) in zip(src_loader, input_trg_loader, output_trg_loader):
             # Clear gradients

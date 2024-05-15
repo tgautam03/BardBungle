@@ -106,12 +106,12 @@ class Transformer(torch.nn.Module):
         self.device = device
         
         # Token Embeddings
-        self.src_token_emb = torch.nn.Embedding(src_vocab_len, emb)
-        self.trg_token_emb = torch.nn.Embedding(trg_vocab_len, emb)
+        self.src_token_emb = torch.nn.Embedding(num_embeddings=src_vocab_len, embedding_dim=emb)
+        self.trg_token_emb = torch.nn.Embedding(num_embeddings=trg_vocab_len, embedding_dim=emb)
 
         # Positional Embeddings
-        self.src_pos_emb = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
-        self.trg_pos_emb = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
+        self.src_pos_emb = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
+        self.trg_pos_emb = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
 
         # Encoder
         self.encoder = torch.nn.ModuleList([EncoderLayer(emb, heads) for _ in range(num_layers) ])
