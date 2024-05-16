@@ -11,13 +11,13 @@ date:   2024-04-28 10:00:00
 
 ## Introduction
 
-Whenever someone talks about Transformer now a days, more often than not, they mean Generative models like GPT. However, not a lot of people know that originally Transformers were designed for Machine Translation. A user would input a sentence in one language and the model would translate that to another. This was done using an encoder-decoder styled architecture, where the encoder accepts the input and understands the context in this particular sentence. This information is then passed over to the decoder which starts generating the translation. 
+Whenever someone talks about Transformers now a days, more often than not, they mean Generative models like GPT. However, not a lot of people know that originally Transformers were designed for Machine Translation. A user would input a sentence in one language and the model's task was to translate that into a different language. This was done using an encoder-decoder styled architecture, where the encoder accepts the input and understands the context in this particular sentence. The encoded information is then passed over to the decoder which starts generating the translation. 
 
-In this work, I'll be focusing on the task of Machine Translation using the "Shakespeare" dataset. Starting with:
+In this work, I'll be focusing on the task of Machine Translation using the "Shakespeare" dataset (where the model will translate shakespeare senteces to simple/modern english). Starting with:
 
-- The dataset (which contains the excerpts from Shakespeare and their meaning), how it is tokenized and preprocessed for training the Neural Net.
+- The dataset (which contains the excerpts from Shakespeare and their meaning), I will discuss how it is tokenized and preprocessed for training the Neural Net.
 
-- I will then spend some time discussing the token embeddings and positional encodings. The special thing about these embeddings is that they will be learned alongside the network parameters.
+- I will then spend some time talking out token embeddings and positional encodings. The special thing about these embeddings is that they will be trained (alongside the network parameters).
 
 - After that, I'll move on to the Transformer Neural Net, where
 
@@ -25,7 +25,7 @@ In this work, I'll be focusing on the task of Machine Translation using the "Sha
 
     - This will guide the decoder (when prompted), to start translating the sentence. 
 
-- I will also discuss the training procedure in detail and more specifically how the loss function enables the generator to make accurate predictions.
+- I will finally discuss the training procedure in detail and more specifically how the loss function enables the generator to make accurate predictions.
 
 ## Dataset
 
@@ -275,11 +275,25 @@ If you look at the complete dataset, you'll see that different sentences contain
 <div class="thecap">Figure 1: CDF of the sequence lengths in the dataset. </div>
 </div>
 
-In Figure 1, we can see that most of the sentences are under 100 tokens long and the maximum sequence length is just over 200. So to cover all the possible sequence sizes, I'll go with the max sequence length of 256.
+In Figure 1, we can see that most of the sentences are under 100 tokens long and the maximum sequence length is just over 200.So to cover all the possible sequence sizes, I should go with the max sequence length of 256. However, to keep things simple for these blog posts, I will filter out the sequences with lengths upto 10, and set the maximum sequence length to 15.
+
+```py
+# Filter out small sequences
+src_id_small = []
+trg_id_small = []
+
+for (src_snt, trg_snt) in zip(src_id, trg_id):
+    if len(src_snt) <= 10 and len(trg_snt) <= 10:
+        src_id_small.append(src_snt)
+        trg_id_small.append(trg_snt)
+
+src_id = src_id_small
+trg_id = trg_id_small
+```
 
 ```py
 # Max Sequence Length
-max_seq_len = 256
+max_seq_len = 15
 ```
 
 Next step is to add these padding tokens alongside the "Beginning of Sentence [BOS]" and "End of Sentence [EOS]" tokens. To understand how this is done, we need a very basic understand of how a Transformer works. I've covered this topic in much more detail in my [YouTube video](https://www.youtube.com/watch?v=zHDap0WOeGI), so here I will just write the conclusion and showcase the final code. 
@@ -366,9 +380,9 @@ print("Input Trg Shapes: {}; dtype: {}".format(input_trg_id.shape, input_trg_id.
 print("Output Trg Shapes: {}; dtype: {}".format(output_trg_id.shape, output_trg_id.dtype))
 ```
 ```
-Src Shapes: torch.Size([51787, 256]); dtype: torch.int64
-Input Trg Shapes: torch.Size([51787, 256]); dtype: torch.int64
-Output Trg Shapes: torch.Size([51787, 256]); dtype: torch.int64
+Src Shapes: torch.Size([8809, 15]); dtype: torch.int64
+Input Trg Shapes: torch.Size([8809, 15]); dtype: torch.int64
+Output Trg Shapes: torch.Size([8809, 15]); dtype: torch.int64
 ```
 
 > Note that the shape of the Tensors are equal now (all sequences in the dataset have same amount of tokens).
@@ -386,20 +400,20 @@ src_token_emb = torch.nn.Embedding(num_embeddings=src_vocab_len, embedding_dim=e
 trg_token_emb = torch.nn.Embedding(num_embeddings=trg_vocab_len, embedding_dim=emb)
 ```
 
-Passing the tokenized (and numericalized) dataset through these layers transform each token into a vector of length `emb`. Figure 2 and 3 shows the embedding matrix for one of the shakespeare and modern english sentences respectively.
+Passing the tokenized (and numericalized) dataset through these layers transform each token into a vector of length `emb` (I have set that as 32). Figure 2 and 3 shows the embedding matrix for one of the shakespeare and modern english sentences respectively.
 
 ```
 -------------------Shakespeare Dataset-------------------------
 Original Sentence:   You do not meet a man but frowns: 
 
-Tokenized Sentence (1st 12 tokens):  ['You', 'do', 'not', 'meet', 'a', 'man', 'but', 'frown', 's', ':', '[EOS]', '[PAD]']
+Tokenized Sentence:  ['You', 'do', 'not', 'meet', 'a', 'man', 'but', 'frown', 's', ':', '[EOS]', '[PAD]', '[PAD]', '[PAD]', '[PAD]']
 
-Numericalized Sentence (1st 12 tokens):  tensor([ 107,   48,   23,  427,   12,   87,   50, 1530,    6,   26,    2,    0])
+Numericalized Sentence:  tensor([ 107,   48,   23,  427,   12,   87,   50,    1530,    6,   26,    2,    0,    0,    0,    0])
 
-Token Embedded Sentence (1st 12 tokens): 
+Token Embedded Sentence: 
 ```
 <div class="imgcap">
-<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/src_tok_emb.png" alt="this slowpoke moves"  width="800"/>
+<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/gh-pages/assets/ch1/src_tok_emb.png" alt="this slowpoke moves"  width="800"/>
 <div class="thecap">Figure 2: Embedding Vectors for tokens in the shakespeare sentence. </div>
 </div>
 
@@ -407,18 +421,16 @@ Token Embedded Sentence (1st 12 tokens):
 -----------------Modern English Dataset-------------------------
 Original Sentence:  Every man you meet these days is frowning.
 
-Tokenized Sentence (1st 12 tokens):  ['Every', 'man', 'you', 'meet', 'these', 'days', 'is', 'frown', 'ing', '.', '[EOS]', '[PAD]']
+Tokenized Sentence:  ['Every', 'man', 'you', 'meet', 'these', 'days', 'is', 'frown', 'ing', '.', '[EOS]', '[PAD]', '[PAD]', '[PAD]', '[PAD]']
 
-Numericalized Sentence (1st 12 tokens):  tensor([   1, 1953,   66,   10,  506,  161,  842,   20, 1534,   38,    5,    0])
+Numericalized Sentence:  tensor([   1,    1953,   66,   10,    506,    161,    842,   20,    1534,   38,    5,    0,    0,    0,    0])
 
-Token Embedded Sentence (1st 12 tokens): 
+Token Embedded Sentence: 
 ```
 <div class="imgcap">
-<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/master/nb/figs/trg_tok_emb.png" alt="this slowpoke moves"  width="800"/>
+<img src="https://raw.githubusercontent.com/tgautam03/BardBungle/gh-pages/assets/ch1/trg_tok_emb.png" alt="this slowpoke moves"  width="800"/>
 <div class="thecap">Figure 3: Embedding Vectors for tokens in the modern english sentence. </div>
 </div>
-
-> Note that I'm just showing the 1st 12 tokens of the sentence in the above figures.
 
 As these embedding layers are essentially learnable, it makes sense to wrap this into the Transformer itself.
 
@@ -430,8 +442,8 @@ class Transformer(torch.nn.Module):
         self.device = device
         
         # Token Embeddings
-        self.src_token_emb = torch.nn.Embedding(src_vocab_len, emb)
-        self.trg_token_emb = torch.nn.Embedding(trg_vocab_len, emb)
+        self.src_token_emb = torch.nn.Embedding(num_embeddings=src_vocab_len, embedding_dim=emb)
+        self.trg_token_emb = torch.nn.Embedding(num_embeddings=trg_vocab_len, embedding_dim=emb)
 
         # Positional Embeddings
 
@@ -471,28 +483,28 @@ Semantically, these two sentences couldn't be any more different. But, if I look
 -------------------First Sentence-------------------------
 Original Sentence:  The boy thanked the king
 
-Tokenized Sentence (1st 8 tokens):  ['The', 'boy', 'thank', 'ed', 'the', 'king', '[EOS]', '[PAD]']
+Tokenized Sentence:  ['The', 'boy', 'thank', 'ed', 'the', 'king', '[EOS]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]']
 
-Numericalized Sentence (1st 8 tokens):  [83, 360, 496, 39, 9, 118, 2, 0]
+Numericalized Sentence:  [83, 360, 496, 39, 9, 118, 2, 0, 0, 0, 0, 0, 0, 0, 0]
 
-Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99 1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+Embedding Vector for word boy:  [ 0.581  0.929  0.898  0.636  0.009 -0.105 -0.602 -0.772 -0.158 -1.653 1.325 -0.95  -0.454 -0.35  -0.323  0.129 -0.83   0.129 -0.233 -0.872 2.567 -0.949  0.38   1.328  0.633 -1.318  1.373 -0.51  -0.683  0.357 1.145 -0.294]
 
 -------------------Second Sentence-------------------------
 Original Sentence:  The king thanked the boy
 
-Tokenized Sentence (1st 8 tokens):  ['The', 'king', 'thank', 'ed', 'the', 'boy', '[EOS]', '[PAD]']
+Tokenized Sentence:  ['The', 'king', 'thank', 'ed', 'the', 'boy', '[EOS]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]', '[PAD]']
 
-Numericalized Sentence (1st 8 tokens):  [83, 118, 496, 39, 9, 360, 2, 0]
+Numericalized Sentence:  [83, 118, 496, 39, 9, 360, 2, 0, 0, 0, 0, 0, 0, 0, 0]
 
-Embedding Vector for word boy:  [-0.365  0.327 -1.035 -0.374  0.062 -0.968 -0.479 -0.99 1.474 -1.356 -1.47  -0.98  -0.951  0.54   1.272 -1.867]
+Embedding Vector for word boy:  [ 0.581  0.929  0.898  0.636  0.009 -0.105 -0.602 -0.772 -0.158 -1.653 1.325 -0.95  -0.454 -0.35  -0.323  0.129 -0.83   0.129 -0.233 -0.872 2.567 -0.949  0.38   1.328  0.633 -1.318  1.373 -0.51  -0.683  0.357 1.145 -0.294]
 ```
 
-In the original "Attention is all you need" paper, to add positional information to the embeddings, they used static vectors, but I'm again going to use the `Embedding` layer. The difference here (compared to the token embedding layer) is that I'm now mapping each position in the sequence to a vector of length equal to the embedding dimension. In simple words, as I have the max sequence length of 256, the positional embedding layer creates a unique vector for each of the 256 positions in the sequence. 
+In the original "Attention is all you need" paper, to add positional information to the embeddings, they used static vectors, but I'm again going to use the `Embedding` layer. The difference here (compared to the token embedding layer) is that I'm now mapping each position in the sequence to a vector of length equal to the embedding dimension. In simple words, as I have the max sequence length of 15, the positional embedding layer creates a unique vector for each of the 15 positions in the sequence. 
 
 ```py
 # Positional Encodings
-src_pos_enc = torch.nn.Embedding(embedding_dim=256, num_embeddings=max_seq_len)
-trg_pos_enc = torch.nn.Embedding(embedding_dim=256, num_embeddings=max_seq_len)
+src_pos_enc = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
+trg_pos_enc = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
 ```
 
 Now when these positional encodings are added to the embedding vectors, we can see that the resulting vector represetnation of a word will depend on it's position in the sentence as well.
@@ -517,9 +529,9 @@ print("Embedding Vector with positional encoding for word boy in sentence 1: ", 
 print("Embedding Vector with positional encoding for word boy in sentence 2: ", np.round(stn2_emb_pos_enc[5].detach().numpy(), 3))
 ```
 ```
-Embedding Vector with positional encoding for word boy in sentence 1:  [-0.261 -0.341 -1.129  1.815  0.275 -1.107 -0.948 -0.136  1.773 -2. -1.442 -0.458 -0.83   1.429 -0.223 -4.107]
+Embedding Vector with positional encoding for word boy:  [ 0.083  1.29   1.214  1.888 -0.518 -0.308 -0.069  0.19   0.852 -0.746 1.352 -1.27   0.23   0.627  0.251 -0.27  -0.362  0.625 -0.111 -0.263 2.799 -1.811 -0.425  2.932 -0.232 -2.046  1.585  0.733  0.137  1.679 0.814  0.997]
 
-Embedding Vector with positional encoding for word boy in sentence 2:  [ 0.597  0.979 -1.448 -2.104 -0.079 -1.969 -1.376 -0.228  1.174 -1.011 -4.062 -1.    -1.693 -1.97   0.462 -1.298]
+Embedding Vector with positional encoding for word boy:  [-0.566 -0.801 -1.09   1.753  0.362  1.34   0.261 -1.005 -1.372 -0.849 3.423 -1.563 -0.47   0.67  -0.217 -0.759 -1.767  0.547 -0.552 -1.349 3.889  1.574  0.884  1.66   0.118 -0.676 -0.133  0.469  0.651  0.278 0.018 -1.29 ]
 ```
 
 > Note that when I'm actually using the position embedding layer, the input is a sequence of integers. What this means is that, the position encoding vectors do not depend on the tokens itself. Instead they only care about the position of the token in a sequence.
@@ -534,12 +546,12 @@ class Transformer(torch.nn.Module):
         self.device = device
         
         # Token Embeddings
-        self.src_token_emb = torch.nn.Embedding(src_vocab_len, emb)
-        self.trg_token_emb = torch.nn.Embedding(trg_vocab_len, emb)
+        self.src_token_emb = torch.nn.Embedding(num_embeddings=src_vocab_len, embedding_dim=emb)
+        self.trg_token_emb = torch.nn.Embedding(num_embeddings=trg_vocab_len, embedding_dim=emb)
 
         # Positional Embeddings
-        self.src_pos_enc = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
-        self.trg_pos_enc = torch.nn.Embedding(embedding_dim=emb, num_embeddings=max_seq_len)
+        self.src_pos_emb = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
+        self.trg_pos_emb = torch.nn.Embedding(num_embeddings=max_seq_len, embedding_dim=emb)
 
         # Encoder
 
